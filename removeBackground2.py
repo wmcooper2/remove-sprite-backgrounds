@@ -1,5 +1,7 @@
 """Let user decide which sprites to include in a spritesheet and automatically remove the background color.
 
+    Make sure the image is in PNG format.
+
     1. scale and translate the image where you want it.
     2. press "p" to set the primary reference color.
     3. press "s" to set the secondary reference color.
@@ -33,10 +35,10 @@ class Colors():
         self.primary = None
         self.secondary = None
 
-    def primary(red: int, green: int, blue: int) -> None:
+    def set_primary(self, red: int, green: int, blue: int) -> None:
         self.primary = (red, green, blue)
 
-    def secondary(red: int, green: int, blue: int) -> None:
+    def set_secondary(self, red: int, green: int, blue: int) -> None:
         self.secondary = (red, green, blue)
 
     def reset(self) -> None:
@@ -175,15 +177,33 @@ class Loop():
                 and loop.outline.start[0] != 0 \
                 and loop.outline.start[1] != 0
 
-    def set_primary_color(self) -> None:
-        #print pixel location, compare to the screen
-        #get pixel data from Point; self.outline.a
-        #mouse location + image location * zoom; self.outline.a.x + self.spritesheet.sprite_sheet.x * self.spritesheet.sprite_sheet.rate
-        #mouse location, adjust for image location and zoom
-        self.colors.primary = "test"
+    def set_primary_color(self, x: int , y: int) -> None:
+        label_y_offset = self.labels.box_height
 
-    def set_secondary_color(self) -> None:
-        self.colors.secondary = "test"
+        #account for label offset
+        y = y-label_y_offset
+        
+        #invert the y value
+        image_height = self.reference_image.height
+        y = image_height - y
+
+        #access the pixel colors 
+        pixel = self.reference_image.getpixel((x, y))
+        self.colors.set_primary(pixel[0], pixel[1], pixel[2])
+
+    def set_secondary_color(self, x: int, y: int) -> None:
+        label_y_offset = self.labels.box_height
+
+        #account for label offset
+        y = y-label_y_offset
+        
+        #invert the y value
+        image_height = self.reference_image.height
+        y = image_height - y
+
+        #access the pixel colors 
+        pixel = self.reference_image.getpixel((x, y))
+        self.colors.set_secondary(pixel[0], pixel[1], pixel[2])
 
     def update(self, dt) -> None:
         self.window.clear()
@@ -208,9 +228,9 @@ def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
 def on_mouse_press(x, y, button, modifiers):
     """Set the starting point."""
     if loop.colors.primary is None:
-        loop.set_primary_color()
+        loop.set_primary_color(x, y)
     elif loop.colors.secondary is None:
-        loop.set_secondary_color()
+        loop.set_secondary_color(x, y)
     else:
         loop.outline.start(x, y)
         loop.outline.end(x, y)
@@ -219,7 +239,7 @@ def on_mouse_press(x, y, button, modifiers):
 def on_mouse_release(x, y, button, modifiers):
     if loop.colors.primary is not None and loop.colors.secondary is not None:
         loop.outline.end(x, y)
-        print(loop.outline)
+#         print(loop.outline)
 
 @window.event
 def on_key_press(symbol, modifiers):
@@ -238,31 +258,37 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.R:
         loop.reset()
     elif symbol == key.P:
-        print("pixel choice")
+        primary = loop.colors.primary
+        secondary = loop.colors.secondary
 
-    elif symbol == key.S:
+    #save image
+    elif symbol == key.S:   
         pointA = loop.outline.a
         pointB = loop.outline.b
-        offset = loop.labels.box_height
-#         print("offset", offset)
-
+        label_offset = loop.labels.box_height
         height = loop.reference_image.height
-#         print("height:", height)
+
+        #TODO
+        #account for image scaling
+        #account for image translation
+        image_x_offset = loop.spritesheet.sprite_sheet.x
+        image_y_offset = loop.spritesheet.sprite_sheet.y
+
 
         #PIL inverts y-axis
         left = min(pointA.x, pointB.x)
         right = max(pointA.x, pointB.x)
-        top = min(pointA.y, pointB.y) - offset
-        bottom = max(pointA.y, pointB.y) - offset
+        top = min(pointA.y, pointB.y) - label_offset
+        bottom = max(pointA.y, pointB.y) - label_offset
 #         print(f"LTRB: {left}, {top}, {right}, {bottom}")
 
         bottom_line = loop.reference_image.height - bottom
         top_line = loop.reference_image.height - top
-#         print(f"bottom_line {bottom_line}, top_line {top_line}")
-#         print(f"pointA {pointA}, pointB {pointB}")
         preview_image = loop.reference_image.crop((left, bottom_line, right, top_line))
-#         print(preview_image)
         preview_image.show()
+        file_name = input("Give the image a name (no extension): ")
+        preview_image.save(f"slices/{file_name}.png")
+
 
 if __name__ == "__main__":
     frame_speed = 1/60
@@ -272,9 +298,3 @@ if __name__ == "__main__":
 
     pyglet.clock.schedule_interval(loop.update, frame_speed)
     pyglet.app.run()
-
-
-#load file in Pillow for easy pixel access
-# img = Image.open(file_).convert("RGBA")
-# ref = img.getpixel((0,0))
-# ref = img.getpixel((ref_x, ref_y))
