@@ -11,6 +11,7 @@
 
 #std lib
 from collections import namedtuple
+import datetime
 import sys
 from typing import Tuple
 
@@ -44,16 +45,22 @@ class App():
         self.reference_image = Image.open(sys.argv[1])
         self.image = pyglet.image.load(sys.argv[1])
         self.mouse_pos = Point(0, 0)
+        self.sprite_outline_a = Point(0, 0)
+        self.sprite_outline_b = Point(0, 0)
 
-    def _debug_coord(self) -> None:
-        """Print mouse coordinates for debugging."""
+    def pixel(self) -> list:
+        """Get coordinate and RGB data."""
         sprite = self.sprite_mouse_pos()
-        scaled_2_ref = Point(sprite.x // self.spritesheet.sprite_sheet.scale, sprite.y // self.spritesheet.sprite_sheet.scale)
-
-        x = int(scaled_2_ref[0])
-        y = int(self.image.height - scaled_2_ref[1])
-        pixel = self.reference_image.getpixel((x, y))
-#         print(f"Scaled: {scaled_2_ref}, RGB: {pixel}")
+        coord = Point(sprite.x // self.spritesheet.sprite_sheet.scale,
+                      sprite.y // self.spritesheet.sprite_sheet.scale)
+        x = int(coord[0])
+        y = int(self.image.height - coord[1])
+        try:
+            rgb = self.reference_image.getpixel((x, y))
+        except IndexError:
+            rgb = (0, 0, 0)
+#         print(f"Scaled: {coord}, RGB: {rgb}")
+        return coord, rgb
 
     def sprite_mouse_pos(self) -> Point:
         """Get the mouse position relative to the sprite sheet."""
@@ -61,53 +68,44 @@ class App():
         y = int(self.mouse_pos[1] - self.spritesheet.sprite_sheet.y)
         return Point(x, y)
 
-    def ref_mouse(self) -> Point:
-        """Get the mouse position relative to the original image."""
-        y = (self.reference_image.height - self.mouse_pos[1]) + (self.spritesheet.sprite_sheet.y // self.spritesheet.sprite_sheet.scale)
-        x = (self.mouse_pos[0] - self.spritesheet.sprite_sheet.x) // self.spritesheet.sprite_sheet.scale
+    def sprite_outline_point_a(self) -> None:
+        a = self.sprite_mouse_pos()
+        self.sprite_outline_a = a
+#         print(a)
 
+    def sprite_outline_point_b(self) -> None:
+        b = self.sprite_mouse_pos()
+        self.sprite_outline_b = b
+#         print(b)
+
+    def ref_mouse_pos(self) -> Point:
+        x = int((
+                self.mouse_pos[0] - self.spritesheet.sprite_sheet.x)
+                // self.spritesheet.sprite_sheet.scale)
+        y = int((
+                self.mouse_pos[1] - self.spritesheet.sprite_sheet.y)
+                // self.spritesheet.sprite_sheet.scale)
         return Point(x, y)
 
-    def points_chosen(self) -> bool:
-        return loop.colors.primary is not None \
-                and loop.colors.secondary is not None \
-                and loop.outline.start[0] != 0 \
-                and loop.outline.start[1] != 0
-
-    def set_mouse_pos(self, x: int, y: int) -> None:
+    def set_window_mouse_pos(self, x: int, y: int) -> None:
         self.mouse_pos = (x, y)
 
-    def set_primary_pixel(self) -> None:
-        self.colors.primary_pixel(self.mouse_pos)
-        self.colors.primary = (0,0,0)
+    def set_primary(self) -> None:
+        coord, color = self.pixel()
+        self.colors.set_p(coord, color)
         #update label of p color
 
-    def set_secondary_pixel(self) -> None:
-        self.colors.secondary_pixel(self.mouse_pos)
-        self.colors.secondary = (0,0,0)
+    def set_secondary(self) -> None:
+        coord, color = self.pixel()
+        self.colors.set_s(coord, color)
         #update label of s color
-
-    def set_primary_color(self, x: int , y: int) -> None:
-        y = self.ref_mouse().y
-
-        #access the pixel colors 
-        pixel = self.reference_image.getpixel((x, y))
-        self.colors.set_primary(pixel[0], pixel[1], pixel[2])
-
-    def set_secondary_color(self, x: int, y: int) -> None:
-        y = self.ref_mouse().y
-
-        #access the pixel colors 
-        pixel = self.reference_image.getpixel((x, y))
-        self.colors.set_secondary(pixel[0], pixel[1], pixel[2])
 
     def update(self, dt) -> None:
         self.window.clear()
         self.spritesheet.update()
         self.outline.update()
+        self.labels.update(self.outline.a, self.outline.b)
         self.colors.update()
-        self.labels.update(self.outline.a, self.outline.b, self.colors.primary, self.colors.secondary)
-#         print(self.mouse_pos)
 
     def reset(self) -> None:
         self.outline.reset()
@@ -119,9 +117,9 @@ class App():
 
 @window.event
 def on_mouse_motion(x, y, dx, dy):
-    loop.set_mouse_pos(x, y)
-    loop._debug_coord()
-
+    """Whenever the mouse is moved..."""
+    loop.set_window_mouse_pos(x, y)
+    loop.pixel()
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
@@ -131,16 +129,22 @@ def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     """Set the starting point."""
+    loop.set_window_mouse_pos(x, y)
+    loop.sprite_outline_point_a()
     loop.outline.start(x, y)
     loop.outline.end(x, y)
 
 @window.event
 def on_mouse_release(x, y, button, modifiers):
-    if loop.colors.primary is not None and loop.colors.secondary is not None:
-        loop.outline.end(x, y)
+    """When you release the mouse button..."""
+    loop.set_window_mouse_pos(x, y)
+    loop.sprite_outline_point_b()
+    loop.outline.end(x, y)
 
 @window.event
 def on_key_press(symbol, modifiers):
+    
+    #transformations
     if symbol == key.U:
         loop.spritesheet.scale_up()
     elif symbol == key.D:
@@ -154,61 +158,68 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.RIGHT:
         loop.spritesheet.move_right()
 
+    #set colors     
     elif symbol == key._1:
-        loop.set_primary_pixel()
-
+        loop.set_primary()
     elif symbol == key._2:
-        loop.set_secondary_pixel()
+        loop.set_secondary()
 
+    #reset values
     elif symbol == key.R:
         loop.reset()
 
+    #TODO
     #save image
     elif symbol == key.S:   
-        pointA = loop.outline.a
-        pointB = loop.outline.b
+        a = loop.outline.a
+        b = loop.outline.b
         label_offset = loop.labels.box_height
-        image_height = loop.reference_image.height
-        image_width = loop.reference_image.width
+#         print("a, b:", a, b)
+
+        ref_h = loop.reference_image.height
+        ref_w = loop.reference_image.width
+#         print("ref h,w: ", ref_h, ref_w)
+
+        #get sprite sheet origin
         scale = loop.spritesheet.sprite_sheet.scale
-#         translation_x = loop.spritesheet.sprite_sheet.x
-#         translation_y = loop.spritesheet.sprite_sheet.y
-        image_x = loop.spritesheet.sprite_sheet.x
-        image_y = loop.spritesheet.sprite_sheet.y
+        sprite_x = loop.spritesheet.sprite_sheet.x
+        sprite_y = loop.spritesheet.sprite_sheet.y
+#         print("scale sprite_x,y", scale, sprite_x, sprite_y)
 
-#         print("translation x, y:", translation_x, translation_y)
+        #get sprite sheet ouline coords, translation adjusted
+        sprite_a = loop.sprite_outline_a
+        sprite_b = loop.sprite_outline_b
+#         print("Pyglet sprite [a, b]:", sprite_a, sprite_b)
 
-        #PIL inverts y-axis
-        #account for scaling
-        left = min(pointA.x, pointB.x) // scale
-        right = max(pointA.x, pointB.x) // scale
-        top = (min(pointA.y, pointB.y) - label_offset) // scale 
-        bottom = (max(pointA.y, pointB.y) - label_offset) // scale 
+        #set outline boundaries
+        left = min(sprite_a.x, sprite_b.x)
+        right = max(sprite_a.x, sprite_b.x)
+        top = min(sprite_a.y, sprite_b.y)
+        bottom = max(sprite_a.y, sprite_b.y)
 
-        #TODO
-        #account for image translation
-#         image_x_offset = int(image_width * scale)
-#         image_y_offset = int(image_height * scale)
-#         print("after scale and translation:", image_x_offset, image_y_offset)
+        #adjust for scaling
+        left /= scale
+        right /= scale
+        top /= scale
+        bottom /= scale
 
-        bottom_line = loop.reference_image.height - bottom
-        top_line = loop.reference_image.height - top
-        preview_image = loop.reference_image.crop((left, bottom_line, right, top_line))
+        #invert the y-axis for PIL's coordinate system
+        top = loop.reference_image.height - top
+        bottom = loop.reference_image.height - bottom
+        print(f"PIL lbrt: {left} {bottom} {right} {top}")
+
+        #show preview and save
+        preview_image = loop.reference_image.crop((left, bottom, right, top))
         preview_image.show()
-        file_name = input("Give the image a name (no extension) or x to cancel: ").strip()
-        if file_name != "x":
-            preview_image.save(f"slices/{file_name}.png")
+#         date = datetime.datetime.utcnow()
+#         preview_image.save(f"slices/{date}.png")
+#         print(f"Saved as: {date}")
 
 
 if __name__ == "__main__":
     frame_speed = 1/60
     keyboard = key.KeyStateHandler()
     window.push_handlers(keyboard)
-#     image = pyglet.image.load(sys.argv[1])
     loop = App(window)
-
-    #TODO
-#     reference_image = Image.open(sys.argv[1])
-
     pyglet.clock.schedule_interval(loop.update, frame_speed)
     pyglet.app.run()

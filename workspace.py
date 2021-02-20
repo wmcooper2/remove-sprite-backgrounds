@@ -109,17 +109,13 @@ class SpriteSheet():
 
     def move_up(self) -> None:
         self.sprite_sheet.y +=  self.translation_speed
-#         self.sprite_sheet.y += self.speed // self.sprite_sheet.scale
 
     def move_down(self) -> None:
         self.sprite_sheet.y -= self.translation_speed
-#         self.sprite_sheet.y -= self.speed // self.sprite_sheet.scale
 
     def move_left(self) -> None:
         self.sprite_sheet.x -= self.translation_speed
-#         self.sprite_sheet.x -= self.speed // self.sprite_sheet.scale
 
     def move_right(self) -> None:
         self.sprite_sheet.x += self.translation_speed
-#         self.sprite_sheet.x += self.speed // self.sprite_sheet.scale
 
