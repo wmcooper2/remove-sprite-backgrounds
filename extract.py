@@ -12,8 +12,9 @@
 #std lib
 from collections import namedtuple
 import datetime
+from pprint import pprint
 import sys
-from typing import Tuple
+from typing import Any, Tuple
 
 #3rd party
 from PIL import Image
@@ -47,19 +48,53 @@ class App():
         self.mouse_pos = Point(0, 0)
         self.sprite_outline_a = Point(0, 0)
         self.sprite_outline_b = Point(0, 0)
+        self.preview = []
+
+    def add_slice(self, image: Image) -> None:
+        self.preview.append(image)
+
+    def slice(self) -> Image:
+        #get sprite sheet origin
+        scale = loop.spritesheet.sprite_sheet.scale
+
+        #get sprite sheet ouline coords, translation adjusted
+        sprite_a = loop.sprite_outline_a
+        sprite_b = loop.sprite_outline_b
+#         print("Pyglet sprite [a, b]:", sprite_a, sprite_b)
+
+        #set outline boundaries
+        left = min(sprite_a.x, sprite_b.x)
+        right = max(sprite_a.x, sprite_b.x)
+        top = min(sprite_a.y, sprite_b.y)
+        bottom = max(sprite_a.y, sprite_b.y)
+
+        #adjust for scaling
+        left /= scale
+        right /= scale
+        top /= scale
+        bottom /= scale
+
+        #invert the y-axis for PIL's coordinate system
+        top = loop.reference_image.height - top
+        bottom = loop.reference_image.height - bottom
+#         print(f"PIL lbrt: {left} {bottom} {right} {top}")
+
+        #slice image and return
+        return loop.reference_image.crop((left, bottom, right, top))
+
+        
 
     def pixel(self) -> list:
         """Get coordinate and RGB data."""
-        sprite = self.sprite_mouse_pos()
-        coord = Point(sprite.x // self.spritesheet.sprite_sheet.scale,
-                      sprite.y // self.spritesheet.sprite_sheet.scale)
+        sheet = self.spritesheet.sprite_sheet
+        pos = self.sprite_mouse_pos()
+        coord = Point(pos.x // sheet.scale, pos.y // sheet.scale)
         x = int(coord[0])
         y = int(self.image.height - coord[1])
         try:
             rgb = self.reference_image.getpixel((x, y))
         except IndexError:
             rgb = (0, 0, 0)
-#         print(f"Scaled: {coord}, RGB: {rgb}")
         return coord, rgb
 
     def sprite_mouse_pos(self) -> Point:
@@ -71,20 +106,15 @@ class App():
     def sprite_outline_point_a(self) -> None:
         a = self.sprite_mouse_pos()
         self.sprite_outline_a = a
-#         print(a)
 
     def sprite_outline_point_b(self) -> None:
         b = self.sprite_mouse_pos()
         self.sprite_outline_b = b
-#         print(b)
 
     def ref_mouse_pos(self) -> Point:
-        x = int((
-                self.mouse_pos[0] - self.spritesheet.sprite_sheet.x)
-                // self.spritesheet.sprite_sheet.scale)
-        y = int((
-                self.mouse_pos[1] - self.spritesheet.sprite_sheet.y)
-                // self.spritesheet.sprite_sheet.scale)
+        sheet = self.spritesheet.sprite_sheet
+        x = int((self.mouse_pos[0] - sheet.x) // sheet.scale)
+        y = int((self.mouse_pos[1] - sheet.y) // sheet.scale)
         return Point(x, y)
 
     def set_window_mouse_pos(self, x: int, y: int) -> None:
@@ -93,24 +123,56 @@ class App():
     def set_primary(self) -> None:
         coord, color = self.pixel()
         self.colors.set_p(coord, color)
-        #update label of p color
+        self.labels.set_p_label(color)
 
     def set_secondary(self) -> None:
         coord, color = self.pixel()
         self.colors.set_s(coord, color)
-        #update label of s color
+        self.labels.set_s_label(color)
 
+    def thumb_attempt(self) -> Image:
+        size = 50
+        copies = [img.copy() for img in loop.preview]
+        for img in copies:
+            print("format:", img.format)
+            #TODO, use resize
+            img.thumbnail((size,size))
+#         print("copies:", copies)
+        width = len(copies) * size
+        height = size
+        new_img = Image.new("RGB", (width, height))
+        print("new_img", new_img)
+
+        for thumb in enumerate(copies):
+            left = thumb[0]*size
+            upper = size
+            right = left + size
+            lower = 0
+#             new_img.paste(thumb, (thumb[0]*size, 0))
+#             new_img.paste(thumb, box=(left, lower, right, upper), mask=None)
+#             new_img.paste(thumb, box=(left, lower, right, upper))
+#             new_img.paste(thumb, (left, lower, right, upper))
+            box = (left, lower, right, upper)
+            print(thumb, box)
+
+            #OKAY, up to here
+#             new_img.paste(thumb, box)
+            new_img.paste(thumb[1], box)
+#         new_img.show()
+        #stitch all images together
+        
     def update(self, dt) -> None:
         self.window.clear()
         self.spritesheet.update()
         self.outline.update()
-        self.labels.update(self.outline.a, self.outline.b)
         self.colors.update()
+        self.labels.update(self.outline.a, self.outline.b)
 
     def reset(self) -> None:
         self.outline.reset()
         self.labels.reset()
         self.colors.reset()
+        self.preview = []
 
 
 
@@ -168,52 +230,60 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.R:
         loop.reset()
 
-    #TODO
     #save image
     elif symbol == key.S:   
-        a = loop.outline.a
-        b = loop.outline.b
-        label_offset = loop.labels.box_height
-#         print("a, b:", a, b)
-
-        ref_h = loop.reference_image.height
-        ref_w = loop.reference_image.width
-#         print("ref h,w: ", ref_h, ref_w)
-
-        #get sprite sheet origin
-        scale = loop.spritesheet.sprite_sheet.scale
-        sprite_x = loop.spritesheet.sprite_sheet.x
-        sprite_y = loop.spritesheet.sprite_sheet.y
-#         print("scale sprite_x,y", scale, sprite_x, sprite_y)
-
-        #get sprite sheet ouline coords, translation adjusted
-        sprite_a = loop.sprite_outline_a
-        sprite_b = loop.sprite_outline_b
-#         print("Pyglet sprite [a, b]:", sprite_a, sprite_b)
-
-        #set outline boundaries
-        left = min(sprite_a.x, sprite_b.x)
-        right = max(sprite_a.x, sprite_b.x)
-        top = min(sprite_a.y, sprite_b.y)
-        bottom = max(sprite_a.y, sprite_b.y)
-
-        #adjust for scaling
-        left /= scale
-        right /= scale
-        top /= scale
-        bottom /= scale
-
-        #invert the y-axis for PIL's coordinate system
-        top = loop.reference_image.height - top
-        bottom = loop.reference_image.height - bottom
-        print(f"PIL lbrt: {left} {bottom} {right} {top}")
-
-        #show preview and save
-        preview_image = loop.reference_image.crop((left, bottom, right, top))
+        preview_image = loop.slice()
         preview_image.show()
-#         date = datetime.datetime.utcnow()
-#         preview_image.save(f"slices/{date}.png")
+        date = datetime.datetime.utcnow()
+        preview_image.save(f"slices/{date}.png")
 #         print(f"Saved as: {date}")
+
+    #add to preview collection
+    elif symbol == key.P:
+        preview_image = loop.slice()
+        loop.add_slice(preview_image)
+#         print("preview:", loop.preview)
+        print("Added to preview:", preview_image)
+
+    elif symbol == key.V:
+        if loop.preview:
+            loop.preview[0].show()
+            image = loop.preview[0]
+
+            #create mask for p_color        
+            mask = []
+            for row in range(image.height):
+                mask.append([])
+                for column in range(image.width):
+                    mask[row].append([])
+                    print(f"r/c: [{row}, {column}]")
+                    mask[row][column] = (image.getpixel((column, row)) != loop.colors.p_color)
+    #                 if image.getpixel((column, row)) != loop.colors.p_color:
+            pprint(mask)
+
+
+
+
+
+
+
+
+
+#         #Rows
+#         #find the first row where a color is not the primary color
+#         x_indices = []
+#         x_longest_runs = []
+#         for row in range(image.height):
+#             x_start = 0
+#             x_end = 0
+#             for column in range(image.width):
+#                 if image.getpixel((column, row)) != loop.colors.p_color:
+#                     print(f"not p color: [{row}, {column}]")
+#                     x_start = column
+#                 else:
+#                     print(f"is p color: [{row}, {column}]")
+ 
+ 
 
 
 if __name__ == "__main__":

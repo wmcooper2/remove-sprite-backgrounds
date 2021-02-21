@@ -90,30 +90,76 @@ class Labels():
             y=760,
             batch=self.labels)
 
-#         self.start = pyglet.text.Label(
-#             self.start_label,
-#             color=self.label_color,
-#             x=window.width - self.box_width + self.label_x_offset,
-#             y=740,
-#             batch=self.labels)
-#         self.end = pyglet.text.Label(
-#             self.end_label,
-#             color=self.label_color,
-#             x=window.width - self.box_width + self.label_x_offset,
-#             y=720,
-#             batch=self.labels)
+        self.controls = pyglet.text.Label(
+            "Controls:",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=320,
+            batch=self.labels)
+
+        self.controls = pyglet.text.Label(
+            "Up, Down, Left, Right",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=300,
+            batch=self.labels)
+
+        self.one = pyglet.text.Label(
+            "1: Set primary color",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=280,
+            batch=self.labels)
+
+        self.two = pyglet.text.Label(
+            "2: Set secondary color",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=260,
+            batch=self.labels)
+
+        self._reset = pyglet.text.Label(
+            "r: Reset",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=240,
+            batch=self.labels)
+
+        self.escape = pyglet.text.Label(
+            "esc: Quit",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=220,
+            batch=self.labels)
+
+        self.scaleup = pyglet.text.Label(
+            "u: Scale up",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=200,
+            batch=self.labels)
+
+        self.scaledown = pyglet.text.Label(
+            "d: Scale down",
+            color=self.label_color,
+            x=window.width - self.box_width + self.label_x_offset,
+            y=180,
+            batch=self.labels)
+
+
+    def set_p_label(self, color) -> None:
+        """Change the primary color label's text."""
+        self.primary.text = f"{self.p_label} {color}"
+
+    def set_s_label(self, color) -> None:
+        """Change the secondary color label's text."""
+        self.secondary.text = f"{self.s_label} {color}"
+
 
     def update(self, a: Point, b: Point) -> None:
-#         self.primary.text = f"{self.p_label} {str(self.p_color)}"
-#         self.secondary.text = f"{self.s_label} {str(self.s_color)}"
-#         self.start.text = f"{self.start_label} [{a.x}, {a.y}]"
-#         self.end.text = f"{self.end_label} [{b.x}, {b.y}]"
         self.background.draw()
         self.labels.draw()
 
     def reset(self) -> None:
         self.p_label = "Pri:"
         self.s_label = "Sec:"
-#         self.start_label = "Start:"
-#         self.end_label = "End:"
-
