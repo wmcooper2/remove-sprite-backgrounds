@@ -8,3 +8,8 @@ Overwrites the original image.
 Saves new image as PNG.
 * Run: `python3 removeBackground.py <image>`
 
+
+### Notes
+* Work on one sprite image at a time.
+* Program assumes there is a primary and secondary color.
+    * (give example screen shots here)

@@ -14,7 +14,7 @@ from collections import namedtuple
 import datetime
 from pprint import pprint
 import sys
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 
 #3rd party
 from PIL import Image
@@ -160,7 +160,36 @@ class App():
             new_img.paste(thumb[1], box)
 #         new_img.show()
         #stitch all images together
-        
+
+    def _top_row(self, mask: List[List[bool]]) -> int:
+        """Find top row index of sprite box."""
+        for row in enumerate(mask):
+            if any(row[1]):
+                return row[0]
+
+    def _bottom_row(self, mask: List[List[bool]]) -> int:
+        """Find bottom row index of sprite box."""
+        mask.reverse()
+        for row in enumerate(mask):
+            if any(row[1]):
+                return len(mask) - row[0] - 1
+
+    def _left_column(self, mask: List[List[bool]]) -> int:
+        """Find left column index of sprite box."""
+        row = self._top_row(mask)
+        for pixel in mask[row]:
+            if pixel == True:
+                return mask[row].index(pixel)
+
+    def _right_column(self, mask: List[List[bool]]) -> int:
+        """Find right column index of sprite box."""
+        row_index = self._top_row(mask)
+        row = mask[row_index]
+        row.reverse()
+        for pixel in row:
+            if pixel == True:
+                return len(row) - row.index(pixel) - 1
+
     def update(self, dt) -> None:
         self.window.clear()
         self.spritesheet.update()
@@ -256,11 +285,18 @@ def on_key_press(symbol, modifiers):
                 mask.append([])
                 for column in range(image.width):
                     mask[row].append([])
-                    print(f"r/c: [{row}, {column}]")
+#                     print(f"r/c: [{row}, {column}]")
                     mask[row][column] = (image.getpixel((column, row)) != loop.colors.p_color)
-    #                 if image.getpixel((column, row)) != loop.colors.p_color:
-            pprint(mask)
 
+            #Check in terminal
+            for row in mask:
+                print(row)
+
+            top = loop._top_row(mask)
+            bottom = loop._bottom_row(mask)
+            left = loop._left_column(mask)
+            right = loop._right_column(mask)
+            print("ltrb:", left, top, right, bottom)
 
 
 
