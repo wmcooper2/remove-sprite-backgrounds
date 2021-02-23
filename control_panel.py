@@ -32,21 +32,29 @@ class Colors():
             batch=self.batch)
 
     def update(self) -> None:
+        """Update loop."""
         self.p_color_box.color = self.p_color
         self.s_color_box.color = self.s_color
         self.batch.draw()
 
+    def secondary_is_white(self) -> bool:
+        """Checks if secondary color is not black."""
+        return self.s_color == (255, 255, 255)
+
     def set_p(self, coord: Point, rgb: Color) -> None:
+        """Set the primary color."""
         self.p_color = (rgb[0], rgb[1], rgb[2])
         self.p_color_box.color = self.p_color
         self.p_pos = coord
 
     def set_s(self, coord: Point, rgb: Color) -> None:
+        """Set the secondary color."""
         self.s_color = (rgb[0], rgb[1], rgb[2])
         self.s_color_box.color = self.s_color
         self.s_pos = coord
 
     def reset(self) -> None:
+        """Reset all the values."""
         self.p_pos = None
         self.s_pos = None
         self.p_color = (255, 255, 255)
@@ -154,7 +162,6 @@ class Labels():
     def set_s_label(self, color) -> None:
         """Change the secondary color label's text."""
         self.secondary.text = f"{self.s_label} {color}"
-
 
     def update(self, a: Point, b: Point) -> None:
         self.background.draw()

@@ -49,9 +49,20 @@ class App():
         self.sprite_outline_a = Point(0, 0)
         self.sprite_outline_b = Point(0, 0)
         self.preview = []
+        self.final_preview = [] 
 
     def add_slice(self, image: Image) -> None:
         self.preview.append(image)
+
+    def remove_secondary_color(self, sprite: Image) -> Image:
+        """Set the secondary color's alpha to 0."""
+        color = self.colors.s_color
+        pixeldata = list(sprite.getdata())
+        for i, pixel in enumerate(pixeldata):
+            if pixel[:3] == color:
+                pixeldata[i] = (255,255,255,0)
+        sprite.putdata(pixeldata)
+        return sprite
 
     def slice(self) -> Image:
         #get sprite sheet origin
@@ -60,7 +71,6 @@ class App():
         #get sprite sheet ouline coords, translation adjusted
         sprite_a = loop.sprite_outline_a
         sprite_b = loop.sprite_outline_b
-#         print("Pyglet sprite [a, b]:", sprite_a, sprite_b)
 
         #set outline boundaries
         left = min(sprite_a.x, sprite_b.x)
@@ -77,7 +87,6 @@ class App():
         #invert the y-axis for PIL's coordinate system
         top = loop.reference_image.height - top
         bottom = loop.reference_image.height - bottom
-#         print(f"PIL lbrt: {left} {bottom} {right} {top}")
 
         #slice image and return
         return loop.reference_image.crop((left, bottom, right, top))
@@ -130,37 +139,13 @@ class App():
         self.colors.set_s(coord, color)
         self.labels.set_s_label(color)
 
-    def thumb_attempt(self) -> Image:
-        size = 50
-        copies = [img.copy() for img in loop.preview]
-        for img in copies:
-            print("format:", img.format)
-            #TODO, use resize
-            img.thumbnail((size,size))
-#         print("copies:", copies)
-        width = len(copies) * size
-        height = size
-        new_img = Image.new("RGB", (width, height))
-        print("new_img", new_img)
-
-        for thumb in enumerate(copies):
-            left = thumb[0]*size
-            upper = size
-            right = left + size
-            lower = 0
-#             new_img.paste(thumb, (thumb[0]*size, 0))
-#             new_img.paste(thumb, box=(left, lower, right, upper), mask=None)
-#             new_img.paste(thumb, box=(left, lower, right, upper))
-#             new_img.paste(thumb, (left, lower, right, upper))
-            box = (left, lower, right, upper)
-            print(thumb, box)
-
-            #OKAY, up to here
-#             new_img.paste(thumb, box)
-            new_img.paste(thumb[1], box)
-#         new_img.show()
-        #stitch all images together
-
+    def crop_subsprite(self, mask) -> Image:
+        top = loop._top_row(mask)
+        bottom = loop._bottom_row(mask)
+        left = loop._left_column(mask)
+        right = loop._right_column(mask)
+        return self.preview[0].crop((left, top, right, bottom))
+        
     def _top_row(self, mask: List[List[bool]]) -> int:
         """Find top row index of sprite box."""
         for row in enumerate(mask):
@@ -276,8 +261,8 @@ def on_key_press(symbol, modifiers):
 
     elif symbol == key.V:
         if loop.preview:
-            loop.preview[0].show()
             image = loop.preview[0]
+#             image.show()
 
             #create mask for p_color        
             mask = []
@@ -285,18 +270,19 @@ def on_key_press(symbol, modifiers):
                 mask.append([])
                 for column in range(image.width):
                     mask[row].append([])
-#                     print(f"r/c: [{row}, {column}]")
                     mask[row][column] = (image.getpixel((column, row)) != loop.colors.p_color)
 
-            #Check in terminal
-            for row in mask:
-                print(row)
+            #crop the subsprite out of the main sheet
+            subsprite = loop.crop_subsprite(mask)
+            alpha_subsprite = subsprite.convert("RGBA")
 
-            top = loop._top_row(mask)
-            bottom = loop._bottom_row(mask)
-            left = loop._left_column(mask)
-            right = loop._right_column(mask)
-            print("ltrb:", left, top, right, bottom)
+            #remove secondary color if it's not white
+            if not loop.colors.secondary_is_white():
+                final_sprite = loop.remove_secondary_color(alpha_subsprite)
+                final_sprite.show()
+                
+
+
 
 
 
