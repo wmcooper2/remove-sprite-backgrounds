@@ -1,3 +1,7 @@
 .git/
 venv/
+slices/
 __pycache__/
+*.swp
+*.pyc
+.DS_Store
