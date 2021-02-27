@@ -1,15 +1,17 @@
 # Game Sprite Background Remover
-Removes the background color from spritesheets.
+Speeds up sprite extraction by removing the surrounding colors from the area you choose.  
+Saves all the sprites you extract to a single sprite sheet with a 1px clear border to prevent image bleeding.
 
 ### Operation
-Acts on a single color found in the first pixel coordinate (0, 0).  
-Changes each pixel's Alpha value to be transparent that matches the reference pixel.  
-Overwrites the original image.  
-Saves new image as PNG.
-* Run: `python3 removeBackground.py <image>`
-
+1. Run: `./start <spritesheet.png>`
+2. Set your Primary and Secondary colors.
+3. Outline the sprite you want.
+4. Extract and see the result in the preview pane.
+5. Save all of them to a single spritesheet.
 
 ### Notes
-* Work on one sprite image at a time.
+* Extract one sprite image at a time.
+* After extracting all the images you want (up to 12?) then save all to a sprite sheet
 * Program assumes there is a primary and secondary color.
     * (give example screen shots here)
+

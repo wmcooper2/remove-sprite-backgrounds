@@ -9,9 +9,9 @@
         2: set the secondary reference color.
         r: reset everything.
         s: save single slice
-        p: preview single slice
-        w: print the final sprite list
+        ??? p: preview single slice
         v: extract the secondary color and put in final sprite list
+        w: print the final sprite list
 
         arrows: up down left right
 
@@ -156,6 +156,10 @@ class App():
     def show_all_final_subsprites(self) -> None:
         self.control_panel.show_all_final_subsprites()
 
+#     def show_outline(self) -> None:
+#         """Show the outline while dragging the mouse."""
+#         self.workspace.outline.update()
+
     def ref_mouse_pos(self) -> Point:
         """Get mouse position relative to the reference image."""
         x, y = self.sheet_coords()
@@ -192,36 +196,32 @@ class App():
 
 @window.event
 def on_mouse_motion(x, y, dx, dy):
-    """Whenever the mouse is moved..."""
+    """Save the mouse position."""
     app.change_mouse_pos(x, y)
-#     app.pixel()
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
     """Draw the outline as the mouse is dragged."""
-#     app.outline.end(x, y)
+    app.change_mouse_pos(x, y)
     app.change_outline_end()
+#     app.show_outline()
+    #TODO
+    app.workspace.outline.update()
 
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     """Set the starting point."""
     app.change_mouse_pos(x, y)
     app.change_outline_start()
-#     app.outline.start(x, y)
-#     app.outline.end(x, y)
 
 @window.event
 def on_mouse_release(x, y, button, modifiers):
     """When you release the mouse button..."""
     app.change_mouse_pos(x, y)
     app.change_outline_end()
-#     app.outline.end(x, y)
-#     app.pixel()
 
-# def on_key_press(symbol, modifiers):
 @window.event
 def on_key_release(symbol, modifiers):
-    
     #transformations
     if symbol == key.U:
         app.zoom_in()
@@ -280,8 +280,8 @@ def on_key_release(symbol, modifiers):
                 app.add_final_subsprite(final_sprite)
 
     elif symbol == key.W:
+        #TODO: save all to a single sheet with 1px clear border to prevent sprite bleeding
         print("final preview:", app.control_panel.preview.preview)
-        #TODO: save all of them to a single sheet with 1px clear border to prevent sprite bleeding
 #         app.show_all_final_subsprites()
 
 #         #Rows

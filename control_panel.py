@@ -16,7 +16,6 @@ from constants import Color, Point
 # pyglet.resource.path = [root, tempdir]
 # pyglet.resource.reindex()
 
-# class Colors():
 class Details():
     def __init__(self, window, box_width):
         self.batch = pyglet.graphics.Batch()

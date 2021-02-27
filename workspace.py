@@ -66,14 +66,26 @@ class Outline():
 
     def _box_coords(self) -> None:
         """Set the outline's perimeter"""
-#         self.top_line.position = (self.a.x, self.a.y, self.b.x, self.a.y)
-#         self.bottom_line.position = (self.a.x, self.b.y, self.b.x, self.b.y)
-#         self.left_line.position = (self.a.x, self.a.y, self.a.x, self.b.y)
-#         self.right_line.position = (self.b.x, self.a.y, self.b.x, self.b.y)
-        self.top_line.position = (self.sheet_a.x, self.sheet_a.y, self.sheet_b.x, self.sheet_a.y)
-        self.bottom_line.position = (self.sheet_a.x, self.sheet_b.y, self.sheet_b.x, self.sheet_b.y)
-        self.left_line.position = (self.sheet_a.x, self.sheet_a.y, self.sheet_a.x, self.sheet_b.y)
-        self.right_line.position = (self.sheet_b.x, self.sheet_a.y, self.sheet_b.x, self.sheet_b.y)
+        self.top_line.position = (
+            self.sheet_a.x,
+            self.sheet_a.y,
+            self.sheet_b.x,
+            self.sheet_a.y)
+        self.bottom_line.position = (
+            self.sheet_a.x,
+            self.sheet_b.y,
+            self.sheet_b.x,
+            self.sheet_b.y)
+        self.left_line.position = (
+            self.sheet_a.x,
+            self.sheet_a.y,
+            self.sheet_a.x,
+            self.sheet_b.y)
+        self.right_line.position = (
+            self.sheet_b.x,
+            self.sheet_a.y,
+            self.sheet_b.x,
+            self.sheet_b.y)
 
     def _start(self, coord: Point)-> None:
         """Set the outline's starting point."""
@@ -212,7 +224,8 @@ class SpriteSheet():
         mask.reverse()
         for row in enumerate(mask):
             if any(row[1]):
-                return len(mask) - row[0] - 1
+#                 return len(mask) - row[0] - 1
+                return len(mask) - row[0]
 
     def _left_column(self, mask: List[List[bool]]) -> int:
         """Find left column index of sprite box."""
@@ -228,7 +241,8 @@ class SpriteSheet():
         row.reverse()
         for pixel in row:
             if pixel == True:
-                return len(row) - row.index(pixel) - 1
+#                 return len(row) - row.index(pixel) - 1
+                return len(row) - row.index(pixel)
 
     def reset(self) -> None:
         self.sprite_sheet.scale = 1
