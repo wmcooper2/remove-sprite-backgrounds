@@ -2,6 +2,9 @@
 A GUI tool to speed up sprite extraction by removing the surrounding colors from the sprites you want.  
 
 ### Basic Operation
+Don't forget to start your virtual environment and install from `requirements.txt` using pip.  
+This program was made using python 3.9 on macOS Big Sur.  
+
 1. Run: `./start <spritesheet.png>`
 2. Zoom and pan to your target sprite.
 3. Set your Primary and Secondary colors.
