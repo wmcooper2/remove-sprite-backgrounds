@@ -182,6 +182,35 @@ class Outline():
         self._sheet_start(new_a)
         self._sheet_end(new_b)
 
+    def _zoom_in(self, zoom: int, movement: int) -> None:
+        """Enlarge the outline's boundaries to match the zoom amount"""
+        #get reference images' a and b, then apply scale to that to calculate the coordinate
+        ref_a = self.a
+        ref_b = self.b
+
+        #apply scaling factor to each point
+        new_a = Point(ref_a.x * zoom, ref_a.y * zoom)
+        new_b = Point(ref_b.x * zoom, ref_b.y * zoom)
+
+        #change the outline's boundaries
+        self._sheet_start(new_a)
+        self._sheet_end(new_b)
+
+    #TODO
+    def _zoom_out(self, zoom: int, movement: int) -> None:
+        """Shrink the outline's boundaries to match the zoom amount"""
+        #get reference images' a and b, then apply scale to that to calculate the coordinate
+        ref_a = self.a
+        ref_b = self.b
+
+        #apply scaling factor to each point
+        new_a = Point(ref_a.x // zoom, ref_a.y // zoom)
+        new_b = Point(ref_b.x // zoom, ref_b.y // zoom)
+
+        #change the outline's boundaries
+        self._sheet_start(new_a)
+        self._sheet_end(new_b)
+
     def reset(self) -> None:
         self.a = Point(0, 0)
         self.b = Point(0, 0)
@@ -402,11 +431,19 @@ class Workspace():
 
     def zoom_in(self) -> None:
         """Zoom in on the sprite sheet."""
+        #TODO
         self.sprites._scale_up()
+        scale = self.sheet_scale()
+        movement = self.sprites._translation_speed()
+        self.outline._zoom_in(scale, movement)
 
     def zoom_out(self) -> None:
         """Zoom out on the sprite sheet."""
+        #TODO
         self.sprites._scale_down()
+        scale = self.sheet_scale()
+        movement = self.sprites._translation_speed()
+        self.outline._zoom_out(scale, movement)
 
     def reset(self) -> None:
         """Reset everything."""
