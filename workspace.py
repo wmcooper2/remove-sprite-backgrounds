@@ -224,7 +224,6 @@ class SpriteSheet():
         mask.reverse()
         for row in enumerate(mask):
             if any(row[1]):
-#                 return len(mask) - row[0] - 1
                 return len(mask) - row[0]
 
     def _left_column(self, mask: List[List[bool]]) -> int:
@@ -241,7 +240,6 @@ class SpriteSheet():
         row.reverse()
         for pixel in row:
             if pixel == True:
-#                 return len(row) - row.index(pixel) - 1
                 return len(row) - row.index(pixel)
 
     def reset(self) -> None:
@@ -321,12 +319,6 @@ class Workspace():
     def zoom_in(self) -> None:
         """Zoom in on the sprite sheet."""
         self.sprites._scale_up()
-
-        #TODO
-        # adjust the sheet's outline box
-#         ref_coords = self.ref_img_coords()
-#         self.change_outline_start(ref_coords[0])
-#         self.change_outline_end(ref_coords[1])
 
     def zoom_out(self) -> None:
         """Zoom out on the sprite sheet."""

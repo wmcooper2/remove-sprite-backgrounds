@@ -14,4 +14,4 @@ Saves all the sprites you extract to a single sprite sheet with a 1px clear bord
 * After extracting all the images you want (up to 12?) then save all to a sprite sheet
 * Program assumes there is a primary and secondary color.
     * (give example screen shots here)
-
+* Will preview sprites up to 200 x 200 pixels

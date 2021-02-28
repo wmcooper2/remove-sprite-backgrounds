@@ -5,15 +5,16 @@
     - scale and translate the image where you want it.
 
     Controls:
+        arrows: up down left right
         1: set the primary reference color.
         2: set the secondary reference color.
+        e: preview single, cleaned slice.
+        s: save single, uncleaned slice.
+        v: extract the secondary color and put in final sprite list.
+        w: save the extracted sprites to their own sheet.
         r: reset everything.
-        s: save single slice
-        ??? p: preview single slice
-        v: extract the secondary color and put in final sprite list
-        w: print the final sprite list
+        esc/q: quit.
 
-        arrows: up down left right
 
 """
 
@@ -156,10 +157,6 @@ class App():
     def show_all_final_subsprites(self) -> None:
         self.control_panel.show_all_final_subsprites()
 
-#     def show_outline(self) -> None:
-#         """Show the outline while dragging the mouse."""
-#         self.workspace.outline.update()
-
     def ref_mouse_pos(self) -> Point:
         """Get mouse position relative to the reference image."""
         x, y = self.sheet_coords()
@@ -204,8 +201,6 @@ def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
     """Draw the outline as the mouse is dragged."""
     app.change_mouse_pos(x, y)
     app.change_outline_end()
-#     app.show_outline()
-    #TODO
     app.workspace.outline.update()
 
 @window.event
@@ -222,8 +217,11 @@ def on_mouse_release(x, y, button, modifiers):
 
 @window.event
 def on_key_release(symbol, modifiers):
+    if symbol == key.ESCAPE or symbol == key.Q:
+        quit()
+
     #transformations
-    if symbol == key.U:
+    elif symbol == key.U:
         app.zoom_in()
     elif symbol == key.D:
         app.zoom_out()
@@ -249,14 +247,13 @@ def on_key_release(symbol, modifiers):
     #save image
     elif symbol == key.S:   
         preview_image = app.slice()
-#         preview_image.show()
         date = datetime.datetime.utcnow()
         preview_image.save(f"slices/{date}.png")
 
     #add to preview collection
-    elif symbol == key.P:
-        preview_image = app.slice()
-        app.add_slice(preview_image)
+    elif symbol == key.E:
+        #combine/refactor
+        app.add_slice(app.slice())
 
     elif symbol == key.V:
         image = app.sliced_image()
@@ -271,34 +268,55 @@ def on_key_release(symbol, modifiers):
                     mask[row][column] = (image.getpixel((column, row)) != app.p_color())
 
             #crop the subsprite out of the main sheet
-            subsprite = app.crop_subsprite(image, mask)
-            alpha_subsprite = subsprite.convert("RGBA")
+            cropped_subsprite = app.crop_subsprite(image, mask)
+            alpha_subsprite = cropped_subsprite.convert("RGBA")
 
             #remove secondary color if it's not white
             if not app.is_secondary_white():
-                final_sprite = app.remove_secondary_color(alpha_subsprite)
-                app.add_final_subsprite(final_sprite)
+                extracted_sprite = app.remove_secondary_color(alpha_subsprite)
+
+                #add 1px clear border
+                dimensions = (extracted_sprite.width + 2, extracted_sprite.height + 2)
+                color = (0,0,0,0) #transparent
+                final_image = Image.new("RGBA", dimensions, color)
+                final_image.paste(extracted_sprite, (1, 1))
+#                 final_image.show()
+#                 app.add_final_subsprite(extracted_sprite)
+                app.add_final_subsprite(final_image)
 
     elif symbol == key.W:
-        #TODO: save all to a single sheet with 1px clear border to prevent sprite bleeding
-        print("final preview:", app.control_panel.preview.preview)
-#         app.show_all_final_subsprites()
+        #these images already have the 1px border around them
+        all_images = app.control_panel.preview.preview
 
-#         #Rows
-#         #find the first row where a color is not the primary color
-#         x_indices = []
-#         x_longest_runs = []
-#         for row in range(image.height):
-#             x_start = 0
-#             x_end = 0
-#             for column in range(image.width):
-#                 if image.getpixel((column, row)) != app.colors.p_color:
-#                     print(f"not p color: [{row}, {column}]")
-#                     x_start = column
-#                 else:
-#                     print(f"is p color: [{row}, {column}]")
- 
- 
+        if not all_images:
+            print("There are no images to save.")
+        else:
+            #check heights
+            maxheight = max([image.height for image in all_images])
+            minheight = min([image.height for image in all_images])
+            if maxheight != minheight:
+                for image in enumerate(all_images):
+                    print(image[0], image[1].height)
+                raise Exception("The heights are not the same.")
+
+            #check widths
+            maxwidth = max([image.width for image in all_images])
+            minwidth = min([image.width for image in all_images])
+            if maxwidth != minwidth:
+                for image in enumerate(all_images):
+                    print(image[0], image[1].width)
+                raise Exception("The widths are not the same.")
+
+            #paste into new blank image
+            height = maxheight
+            width = len(all_images * maxwidth)
+            color = (0,0,0,0) #transparent
+            final_image = Image.new("RGBA", (width, height), color)
+            for image in enumerate(all_images):
+                final_image.paste(image[1], (image[0]*image[1].width, 0))
+            final_image.show()
+            date = datetime.datetime.utcnow()
+            final_image.save(f"sprite_sheets/{date}.png")
 
 
 if __name__ == "__main__":

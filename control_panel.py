@@ -113,65 +113,100 @@ class Controls():
         self.label_x_offset = 10
         self.batch = pyglet.graphics.Batch()
         self.label_color = (0, 0, 0, 255) #Black
-        self.labels_top = 160
+        self.labels_top = 220
+        self.vertical_spacing = 20
 
-        self.escape = pyglet.text.Label(
-            "esc: Quit",
-            color=self.label_color,
-            x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top,
-            batch=self.batch)
-
-        self.one = pyglet.text.Label(
-            "1: Set primary color",
-            color=self.label_color,
-            x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top - 20,
-            batch=self.batch)
-
-        self.two = pyglet.text.Label(
-            "2: Set secondary color",
-            color=self.label_color,
-            x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top - 40,
-            batch=self.batch)
-
-        self._save = pyglet.text.Label(
-            "s: Save",
-            color=self.label_color,
-            x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top - 60,
-            batch=self.batch)
-
-        #TODO, add p for preview, v for remove secondary color
-
-        self._reset = pyglet.text.Label(
-            "r: Reset",
-            color=self.label_color,
-            x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top - 80,
-            batch=self.batch)
-
-        self.arrows = pyglet.text.Label(
+        self._arrows = pyglet.text.Label(
             "Arrows: UDLR",
             color=self.label_color,
             x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top - 100,
+            y=0,
             batch=self.batch)
 
-        self.scaleup = pyglet.text.Label(
-            "u: Scale up",
+        self._one = pyglet.text.Label(
+            "1:   set primary color",
             color=self.label_color,
             x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top - 120,
+            y=0,
             batch=self.batch)
 
-        self.scaledown = pyglet.text.Label(
-            "d: Scale down",
+        self._two = pyglet.text.Label(
+            "2:   set secondary color",
             color=self.label_color,
             x=window.width - box_width + self.label_x_offset,
-            y=self.labels_top - 140,
             batch=self.batch)
+
+        self._extract = pyglet.text.Label(
+            "e:   extract",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._save = pyglet.text.Label(
+            "s:   save (uncleaned)",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._view = pyglet.text.Label(
+            "v:   view",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._save_to_sheet = pyglet.text.Label(
+            "w:  save to sheet",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._scaleup = pyglet.text.Label(
+            "u:   scale up",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._scaledown = pyglet.text.Label(
+            "d:   scale down",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._reset = pyglet.text.Label(
+            "r:    reset",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._escape = pyglet.text.Label(
+            "esc/q:   Quit",
+            color=self.label_color,
+            x=window.width - box_width + self.label_x_offset,
+            y=0,
+            batch=self.batch)
+
+        self._label_list = [
+            self._arrows,
+            self._one,
+            self._two,
+            self._extract,
+            self._save,
+            self._view,
+            self._scaledown,
+            self._scaleup,
+            self._reset,
+            self._save_to_sheet,
+            self._escape]
+
+        for index, label in enumerate(self._label_list):
+            label.y = self.labels_top - index * self.vertical_spacing
 
     def update(self) -> None:
         self.batch.draw()
@@ -237,6 +272,7 @@ class Preview():
     def reset(self) -> None:
         self.image = []
         self.preview = []
+        self.sprites = []
 
     def update(self) -> None:
         self.batch.draw()
