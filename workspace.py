@@ -16,13 +16,20 @@ class Outline():
         self.secondary_ref = 0
         self.color = (255, 0, 0)
         self.line_width = 3
+
+        #reference image
         self.a = Point(0, 0)
         self.b = Point(0, 0)
-        self.sheet_a = Point(0, 0)
-        self.sheet_b = Point(0, 0)
         self.width = 0
         self.height = 0
+
+        #workspace spritesheet
+        self.sheet_a = Point(0, 0)
+        self.sheet_b = Point(0, 0)
+        self.sheet_w = 0
+        self.sheet_h = 0
         self.batch = pyglet.graphics.Batch()
+
         self.top_line = pyglet.shapes.Line(
             self.a.x,
             self.a.y,
@@ -31,6 +38,7 @@ class Outline():
             width=self.line_width,
             color=self.color,
             batch=self.batch)
+
         self.bottom_line = pyglet.shapes.Line(
             self.a.x,
             self.a.y,
@@ -39,6 +47,7 @@ class Outline():
             width=self.line_width,
             color=self.color,
             batch=self.batch)
+
         self.right_line = pyglet.shapes.Line(
             self.a.x,
             self.a.y,
@@ -47,6 +56,7 @@ class Outline():
             width=self.line_width,
             color=self.color,
             batch=self.batch)
+
         self.left_line = pyglet.shapes.Line(
             self.a.x,
             self.a.y,
@@ -57,30 +67,39 @@ class Outline():
             batch=self.batch)
 
     def __str__(self) -> None:
-        return str(f"A={self.a} B={self.b} w={self.width} h={self.height}")
+        return str(f"ref: A={self.a} B={self.b} w={self.width} h={self.height}, sheet: A={self.sheet_a} B={self.sheet_b} w={self.sheet_w} h={self.sheet_h}")
 
     def _dimensions(self) -> None:
         """Set the outline's width and height."""
+        #reference image
         self.width = abs(self.a.x - self.b.x)
         self.height = abs(self.a.y - self.b.y)
 
+        #workspace spritesheet
+        self.sheet_w = abs(self.sheet_a.x - self.sheet_b.x)
+        self.sheet_h = abs(self.sheet_a.y - self.sheet_b.y)
+
     def _box_coords(self) -> None:
         """Set the outline's perimeter"""
+        #workspace spritesheet
         self.top_line.position = (
             self.sheet_a.x,
             self.sheet_a.y,
             self.sheet_b.x,
             self.sheet_a.y)
+
         self.bottom_line.position = (
             self.sheet_a.x,
             self.sheet_b.y,
             self.sheet_b.x,
             self.sheet_b.y)
+
         self.left_line.position = (
             self.sheet_a.x,
             self.sheet_a.y,
             self.sheet_a.x,
             self.sheet_b.y)
+
         self.right_line.position = (
             self.sheet_b.x,
             self.sheet_a.y,
@@ -111,6 +130,58 @@ class Outline():
         """Return coordinates for outline drawn on screen."""
         return (self.sheet_a, self.sheet_b)
 
+    def _move_down(self, amount: int) -> None:
+        """Move the outline on the workspace spritesheet to the down by amount."""
+        #current outline coords
+        a, b = self._outline_coords()
+
+        #adjust for the translation amount
+        new_a = Point(a.x, a.y - amount)
+        new_b = Point(b.x, b.y - amount)
+
+        #change the outline's boundaries
+        self._sheet_start(new_a)
+        self._sheet_end(new_b)
+
+    def _move_left(self, amount: int) -> None:
+        """Move the outline on the workspace spritesheet to the left by amount."""
+        #current outline coords
+        a, b = self._outline_coords()
+
+        #adjust for the translation amount
+        new_a = Point(a.x - amount, a.y)
+        new_b = Point(b.x - amount, b.y)
+
+        #change the outline's boundaries
+        self._sheet_start(new_a)
+        self._sheet_end(new_b)
+
+    def _move_right(self, amount: int) -> None:
+        """Move the outline on the workspace spritesheet to the right by amount."""
+        #current outline coords
+        a, b = self._outline_coords()
+
+        #adjust for the translation amount
+        new_a = Point(a.x + amount, a.y)
+        new_b = Point(b.x + amount, b.y)
+
+        #change the outline's boundaries
+        self._sheet_start(new_a)
+        self._sheet_end(new_b)
+
+    def _move_up(self, amount: int) -> None:
+        """Move the outline on the workspace spritesheet to the up by amount."""
+        #current outline coords
+        a, b = self._outline_coords()
+
+        #adjust for the translation amount
+        new_a = Point(a.x, a.y + amount)
+        new_b = Point(b.x, b.y + amount)
+
+        #change the outline's boundaries
+        self._sheet_start(new_a)
+        self._sheet_end(new_b)
+
     def reset(self) -> None:
         self.a = Point(0, 0)
         self.b = Point(0, 0)
@@ -133,6 +204,10 @@ class SpriteSheet():
         self.batch = pyglet.graphics.Batch()
         self.sprite_sheet = pyglet.sprite.Sprite(self.anim, batch=self.batch)
         self.translation_speed = 100
+
+    def _coords(self) -> Tuple[int, int]:
+        """Return sprite sheet's origin coordinates."""
+        return (self.sprite_sheet.x, self.sprite_sheet.y)
 
     def _crop_boundaries(self, mask) -> Box:
         """Return the boundaries for the crop box."""
@@ -158,6 +233,18 @@ class SpriteSheet():
         """Translate the sprite sheet right."""
         self.sprite_sheet.x += self.translation_speed
 
+    def _pixel(self, pos: Point) -> Pixel:
+        """Get pixel's coordinate and RGB data."""
+        scale = self._scale()
+        coord = Point(pos.x // scale, pos.y // scale)
+        x = int(coord[0])
+        y = int(self.image.height - coord[1])
+        try:
+            rgb = self.reference_image.getpixel((x, y))
+        except IndexError:
+            rgb = (0, 0, 0)
+        return coord, rgb
+
     def _scale(self) -> int:
         """Return sprite sheet scale."""
         return self.sprite_sheet.scale
@@ -175,6 +262,7 @@ class SpriteSheet():
             self.sprite_sheet.scale = 6
 
     def _slice(self, coords: Tuple[Point, Point]) -> Image:
+        """Returns slice of the reference image."""
         image = self.reference_image
         scale = self._scale()
         sprite_a, sprite_b = coords[0], coords[1]
@@ -191,34 +279,16 @@ class SpriteSheet():
         top /= scale
         bottom /= scale
 
-        #invert the y-axis for PIL's coordinate system
+        #flip the y-axis because of PIL's coordinate system
         top = image.height - top
         bottom = image.height - bottom
-
         return image.crop((left, bottom, right, top))
 
-    def _pixel(self, pos: Point) -> Pixel:
-        """Get pixel's coordinate and RGB data."""
-        scale = self._scale()
-        coord = Point(pos.x // scale, pos.y // scale)
-        x = int(coord[0])
-        y = int(self.image.height - coord[1])
-        try:
-            rgb = self.reference_image.getpixel((x, y))
-        except IndexError:
-            rgb = (0, 0, 0)
-        return coord, rgb
+    def _translation_speed(self) -> int:
+        """Returns spritesheet translation speed."""
+        return self.translation_speed
 
-    def _coords(self) -> Tuple[int, int]:
-        """Return sprite sheet's origin coordinates."""
-        return (self.sprite_sheet.x, self.sprite_sheet.y)
-
-    def _top_row(self, mask: List[List[bool]]) -> int:
-        """Find top row index of sprite box."""
-        for row in enumerate(mask):
-            if any(row[1]):
-                return row[0]
-
+    #BOUNDARIES
     def _bottom_row(self, mask: List[List[bool]]) -> int:
         """Find bottom row index of sprite box."""
         mask.reverse()
@@ -241,6 +311,12 @@ class SpriteSheet():
         for pixel in row:
             if pixel == True:
                 return len(row) - row.index(pixel)
+
+    def _top_row(self, mask: List[List[bool]]) -> int:
+        """Find top row index of sprite box."""
+        for row in enumerate(mask):
+            if any(row[1]):
+                return row[0]
 
     def reset(self) -> None:
         self.sprite_sheet.scale = 1
@@ -286,18 +362,26 @@ class Workspace():
 
     def pan_up(self) -> None:
         """Pan up on the workspace."""
+        speed = self.sprites._translation_speed()
+        self.outline._move_up(speed)
         self.sprites._move_up()
 
     def pan_down(self) -> None:
         """Pan down on the workspace."""
+        speed = self.sprites._translation_speed()
+        self.outline._move_down(speed)
         self.sprites._move_down()
 
     def pan_left(self) -> None:
         """Pan left on the workspace."""
+        speed = self.sprites._translation_speed()
+        self.outline._move_left(speed)
         self.sprites._move_left()
 
     def pan_right(self) -> None:
         """Pan right on the workspace."""
+        speed = self.sprites._translation_speed()
+        self.outline._move_right(speed)
         self.sprites._move_right()
 
     def pixel(self, pos: Point) -> Pixel:
