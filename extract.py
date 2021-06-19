@@ -14,14 +14,13 @@
         w: save the extracted sprites to their own sheet.
         r: reset everything.
         esc/q: quit.
-
-
 """
 
 #std lib
 from collections import namedtuple
 import datetime
 from pprint import pprint
+from pathlib import Path
 import sys
 from typing import Any, List, Tuple
 
@@ -71,7 +70,14 @@ class App():
         """Change the outline's starting point."""
         self.workspace.change_outline_start(self.sheet_mouse_pos())
 
+    def clear_slice_dir(self) -> None:
+        """Delete the images in the slice dir."""
+        for img in Path("slices").iterdir():
+            if img.is_file():
+                img.unlink()
+
     def crop_subsprite(self, img, mask) -> Image:
+        """Return a cropped subsprite image."""
         box = self.workspace.crop_subsprite(mask)
         return img.crop(box)
 
@@ -84,6 +90,7 @@ class App():
         return self.workspace.pixel(self.sheet_mouse_pos())
 
     def is_secondary_white(self) -> bool:
+        """Return True is the secondary color is white."""
         return self.control_panel.is_secondary_white()
 
     def last_preview_image(self) -> Image:
@@ -185,6 +192,7 @@ class App():
     def reset(self) -> None:
         self.control_panel.reset()
         self.workspace.reset()
+        self.clear_slice_dir()
 
     def update(self, dt) -> None:
         self.window.clear()
@@ -248,6 +256,9 @@ def on_key_release(symbol, modifiers):
     elif symbol == key.S:   
         preview_image = app.slice()
         date = datetime.datetime.utcnow()
+        #if dir doesnt exist...
+        if not Path("slices").exists():
+            Path("slices").mkdir()
         preview_image.save(f"slices/{date}.png")
 
     #add to preview collection
@@ -287,7 +298,6 @@ def on_key_release(symbol, modifiers):
     elif symbol == key.W:
         #these images already have the 1px border around them
         all_images = app.control_panel.preview.preview
-
         if not all_images:
             print("There are no images to save.")
         else:
@@ -317,13 +327,20 @@ def on_key_release(symbol, modifiers):
             final_image.show()
             date = datetime.datetime.utcnow()
             final_image.save(f"sprite_sheets/{date}.png")
-
+        #clean up the temporary slices dir
+        app.clear_slice_dir()
 
 if __name__ == "__main__":
     frame_speed = 1/60
     keyboard = key.KeyStateHandler()
     window.push_handlers(keyboard)
-    img = sys.argv[1]
-    app = App(window, img)
-    pyglet.clock.schedule_interval(app.update, frame_speed)
-    pyglet.app.run()
+
+    #Make sure there is a file argument
+    try:
+        img = sys.argv[1]
+        app = App(window, img)
+        pyglet.clock.schedule_interval(app.update, frame_speed)
+        pyglet.app.run()
+    except IndexError:
+        print("You need to specify a spritesheet to work on.")
+

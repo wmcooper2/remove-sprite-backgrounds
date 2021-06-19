@@ -1,7 +1,8 @@
 .git/
-venv/
-slices/
-__pycache__/
+venv*
+slices*
+__pycache__*
+sprite_sheets*
 *.swp
 *.pyc
 .DS_Store
