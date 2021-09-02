@@ -19,6 +19,8 @@ pip3 install -r requirements.txt
 7. Save all of them to a single spritesheet.
 
 ### Example Operation
+Here is a [YouTube video]() example extracting a couple of small enemies.  
+
 Here is an example of extracting these yoshi coins from a sprite sheet and the result.  
 ![Yoshi Coins](yoshicoins.png) ![Result](finalSpriteSheet.png)  
 
